@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document collection · Chat with Qwen</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="page-shell documents-page">
+    <div class="page-heading">
+      <p class="eyebrow">LOCAL AI</p>
+      <h1>Document collection</h1>
+      <p class="page-subtitle">Upload and manage the files you want to keep with your collection.</p>
+      <nav class="page-nav" aria-label="Main navigation">
+        <a href="/">Chat</a>
+        <a class="active" href="/documents" aria-current="page">Document collection</a>
+      </nav>
+    </div>
+
+    <section class="content-card documents-card">
+      <section class="document-section upload-section" aria-labelledby="add-title">
+        <h2 id="add-title">Add documents</h2>
+        <form id="upload-form" class="upload-form">
+          <div class="file-picker">
+            <label for="file-input">Choose a file</label>
+            <input id="file-input" name="file" type="file" accept=".pdf,.docx,.txt,.md">
+          </div>
+          <button id="upload-button" class="primary-button" type="submit">Upload</button>
+        </form>
+        <p class="helper-text">Maximum file size: 50 MB.</p>
+        <p id="upload-status" class="upload-status" role="status" aria-live="polite" hidden></p>
+      </section>
+
+      <section class="document-section files-section" aria-labelledby="files-title">
+        <div class="section-heading">
+          <h2 id="files-title">Your files</h2>
+          <span id="file-count" class="file-count">0 files</span>
+        </div>
+        <p id="empty-state" class="empty-state">No files yet. Upload a document to start your collection.</p>
+        <ul id="file-list" class="file-list" aria-label="Uploaded files"></ul>
+      </section>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='documents.js') }}"></script>
+</body>
+</html>

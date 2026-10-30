@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat with Qwen</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="page-shell">
+    <div class="page-heading">
+      <p class="eyebrow">LOCAL AI</p>
+      <h1>Chat with Qwen</h1>
+      <p class="page-subtitle">Ask questions, search the web, and chat with your local model.</p>
+      <nav class="page-nav" aria-label="Main navigation">
+        <a class="active" href="/" aria-current="page">Chat</a>
+        <a href="/documents">Document collection</a>
+      </nav>
+    </div>
+
+    <section class="content-card chat-card" aria-label="Chat">
+      <div class="chat-toolbar">
+        <p class="model-status"><span class="status-dot"></span>Qwen 3 · running on your machine</p>
+        <button id="clear-button" class="secondary-button" type="button" title="Clear conversation">Clear chat</button>
+      </div>
+      <section id="conversation" class="conversation" aria-live="polite" aria-label="Conversation">
+        <div id="welcome" class="welcome">
+          <div class="welcome-icon" aria-hidden="true">✦</div>
+          <h2>What’s on your mind?</h2>
+          <p>Ask anything. Your conversation stays in this browser.</p>
+        </div>
+      </section>
+
+      <form id="chat-form" class="composer">
+        <label class="visually-hidden" for="message-input">Message</label>
+        <textarea id="message-input" rows="1" placeholder="Message Qwen…" required></textarea>
+        <button id="send-button" class="primary-button" type="submit" aria-label="Send message"><span>Send</span><span aria-hidden="true">↑</span></button>
+      </form>
+      <p class="footnote">Responses are generated locally by Ollama.</p>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+</html>
