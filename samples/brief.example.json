@@ -1,0 +1,38 @@
+{
+  "event_name": "BizComp Inclusive Workshop 2",
+  "event_type": "open workshop",
+  "date": "2026-10-12",
+  "time": "16:30-18:30",
+  "location": "Room 301, Chaloem Rajakumari 60 (Chamchuri 10) Building",
+  "participants": [
+    {"group": "BAScii students", "count": 25},
+    {"group": "Member students", "count": 25},
+    {"group": "Mentor", "count": 1}
+  ],
+  "activities": [
+    "Introduce BizComp and what members can join",
+    "Explain business case competition formats",
+    "Teach pitch deck structure and judging criteria",
+    "Talk about how good competition teams work together",
+    "Mini case challenge in small teams, then networking"
+  ],
+  "speakers": ["1 mentor (BAScii alumnus)"],
+  "budget_items": [
+    {"item": "Room 301 overtime fee (hours)", "qty": 2, "unit_price": 120},
+    {"item": "Pens (pack)", "qty": 1, "unit_price": 230},
+    {"item": "Post-it notes (pack)", "qty": 1, "unit_price": 129},
+    {"item": "BizComp screened mug (speaker gift)", "qty": 1, "unit_price": 500}
+  ],
+  "proposer": "Sample Proposer",
+  "followup_answers": {},
+  "sections": {
+    "introduction": "",
+    "objectives": [],
+    "benefits": [],
+    "activity_kpis": [],
+    "characteristics": {"ticked": [], "explanation": ""},
+    "schedule": [],
+    "facilities": []
+  },
+  "to_confirm": []
+}

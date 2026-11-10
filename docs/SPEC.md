@@ -113,7 +113,7 @@ flowchart LR
 | `scripts/compare_models.py` | ย่วย | ลองเทียบโมเดล |
 | `export.py`, `templates/proposal_template.docx` | หมิง | เติมไฟล์ Word |
 | `checker.py` | หมิง | ตรวจจุดผิด |
-| `app.py`, `config.py` | หมิง | route ของทุกหน้า และค่าตั้งต้น เช่นชื่อโมเดล |
+| `app.py`, `config.py`, `ollama_client.py` | หมิง | route ของทุกหน้า, ค่าตั้งต้น เช่นชื่อโมเดล, และฟังก์ชันเรียก Ollama ที่ทุกคนใช้ร่วมกัน (`ollama_post`) |
 
 ถ้าต้องแก้ไฟล์ของคนอื่น ให้บอกเจ้าของก่อน ถ้าต้องเพิ่ม route ใน `app.py` ให้เขียนเป็นฟังก์ชันสั้น ๆ ที่เรียกฟังก์ชันจากไฟล์ของตัวเอง แล้วบอกหมิง
 
@@ -145,7 +145,7 @@ repo ต้องเป็น public และอาจารย์บอกว�
 
 วิธีใช้: copy กล่องของงานตัวเองไปแปะใน Codex ทีละกล่อง ทำเสร็จแล้วลองเช็กตามบรรทัด "Check" ถ้าผ่านค่อย commit แล้วไปกล่องถัดไป คำสั่งเขียนเป็นภาษาอังกฤษ เพราะโค้ดใน repo เป็นภาษาอังกฤษ ทุกกล่องสั่งให้ Codex อ่าน `docs/SPEC.md` และ `AGENTS.md` ก่อน Codex จะได้รู้ว่าไฟล์ไหนเป็นของใคร
 
-**C0 (หมิง ทำก่อนคนอื่น)**
+**C0 (หมิง · เสร็จแล้ว 10 พ.ย.)**
 ```
 Read AGENTS.md and docs/SPEC.md first. Split app.py into modules without changing behaviour:
 config.py (MODEL, EMBED_MODEL, paths, sizes), knowledge.py (extract_document, split_text,

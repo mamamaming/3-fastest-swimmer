@@ -16,6 +16,7 @@ Three people work in this repo at the same time. Each file has one owner. Only e
 | `export.py`, `templates/proposal_template.docx` | Ming | Filling the Word template |
 | `checker.py` | Ming | Consistency checks |
 | `app.py`, `config.py` | Ming | Flask routes and settings only |
+| `ollama_client.py` | Ming | Shared Ollama calls (`ollama_post`, `OllamaError`) and the chat tool loop |
 
 `app.py` holds routes only. A route should be a short function that calls a function from one of the modules above. Put logic in the modules, not in `app.py`.
 
