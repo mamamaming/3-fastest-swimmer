@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from config import EMBED_MODEL, MAX_FILE_SIZE, SUPPORTED_EXTENSIONS, UPLOAD_FOLDER
 from knowledge import (
     INDEX_LOCK, document_records, embed_texts, extract_document, load_index,
-    retrieve_context, save_index, split_text,
+    retrieve_context, save_index, search_sections, split_document,
 )
 from ollama_client import OllamaError, run_chat_with_tools
 
@@ -79,7 +79,7 @@ def upload_document():
 
     try:
         pages = extract_document(safe_name, content)
-        indexed_chunks = [chunk for page_number, text in pages for chunk in split_text(text, page_number)]
+        indexed_chunks = split_document(pages, request.form.get("event_type", "other"))
         vectors = embed_texts([chunk["text"] for chunk in indexed_chunks])
     except OllamaError as error:
         return jsonify(error=f"Could not index this document: {error}. Start Ollama and pull {EMBED_MODEL}."), 502
@@ -96,13 +96,7 @@ def upload_document():
             number += 1
 
         stored_chunks = [
-            {
-                "source": candidate,
-                "chunk": chunk_number,
-                "page": chunk["page"],
-                "text": chunk["text"],
-                "embedding": vector,
-            }
+            {"source": candidate, "chunk": chunk_number, **chunk, "embedding": vector}
             for chunk_number, (chunk, vector) in enumerate(zip(indexed_chunks, vectors), start=1)
         ]
         destination = UPLOAD_FOLDER / candidate
@@ -166,6 +160,27 @@ def serve_document(filename):
     )
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+@app.get("/api/search")
+def search():
+    """Test route for search_sections. Example:
+    /api/search?section=Introduction&event_type=open%20workshop&q=case%20competition&skip=inclusive-workshop-2
+    """
+    section = request.args.get("section", "").strip()
+    if not section:
+        return jsonify(error="Add ?section=, e.g. section=Introduction."), 400
+    skip = [name for value in request.args.getlist("skip") for name in value.split(",")]
+    try:
+        results = search_sections(
+            section, request.args.get("event_type", ""), request.args.get("q", ""),
+            k=request.args.get("k", 3, type=int), skip=skip,
+        )
+    except OllamaError as error:
+        return jsonify(error=f"{error}. Start Ollama and pull {EMBED_MODEL}."), 502
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        return jsonify(error=f"Could not search the local document index: {error}"), 500
+    return jsonify(results=results)
 
 
 @app.errorhandler(413)
