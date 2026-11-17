@@ -119,6 +119,7 @@
       currentQuestions = data.questions || [];
       if (!currentQuestions.length) {
         showStatus('Nothing is missing. The brief is ready for writing.', [], false, questionsStatus);
+        showWriteCard();
         return;
       }
       renderQuestions(currentQuestions);
@@ -126,7 +127,8 @@
       answersButton.disabled = false;
       questionList.querySelector('input')?.focus();
     } catch (error) {
-      showStatus(error.message, [], true, questionsStatus);
+      showStatus(`${error.message} You can still write the proposal.`, [], true, questionsStatus);
+      showWriteCard();
     }
   }
 
@@ -151,9 +153,54 @@
       const open = data.brief.to_confirm?.length || 0;
       showStatus(open ? `Answers saved. ${open} item(s) will be marked [TO CONFIRM].` : 'Answers saved.', [], false, questionsStatus);
       showBrief(data.id, data.brief);
+      showWriteCard();
+      writeCard.scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
       showStatus(`Could not reach the app: ${error.message}`, [], true, questionsStatus);
       answersButton.disabled = false;
+    }
+  });
+
+  // ---- Write and download (C3) ----
+  const writeCard = document.getElementById('write-card');
+  const writeButton = document.getElementById('write-button');
+  const writeStatus = document.getElementById('write-status');
+  const downloadLink = document.getElementById('download-link');
+
+  function showWriteCard() {
+    writeCard.hidden = false;
+    writeButton.disabled = false;
+    downloadLink.hidden = true;
+    showStatus('', [], false, writeStatus);
+  }
+
+  writeButton.addEventListener('click', async () => {
+    writeButton.disabled = true;
+    downloadLink.hidden = true;
+    const started = Date.now();
+    const tick = () => showStatus(
+      `Writing… ${Math.round((Date.now() - started) / 1000)} s (usually about 5 minutes)`, [], false, writeStatus,
+    );
+    tick();
+    const timer = setInterval(tick, 1000);
+    try {
+      const response = await fetch(`/api/briefs/${currentBriefId}/write`, { method: 'POST' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not write the proposal.');
+      const warnings = data.warnings || [];
+      showStatus(
+        warnings.length ? 'Done. Check these in the Word file before sending:' : 'Done. No problems found.',
+        warnings, false, writeStatus,
+      );
+      writeStatus.classList.toggle('warning', Boolean(warnings.length));
+      downloadLink.href = `/api/briefs/${currentBriefId}/docx`;
+      downloadLink.hidden = false;
+      showBrief(data.id, data.brief);
+    } catch (error) {
+      showStatus(error.message, [], true, writeStatus);
+    } finally {
+      clearInterval(timer);
+      writeButton.disabled = false;
     }
   });
 
@@ -204,6 +251,7 @@
       showStatus(data.warnings?.length ? 'Saved. Please double-check:' : '', data.warnings || []);
       statusBox.classList.toggle('warning', Boolean(data.warnings?.length));
       currentBriefId = data.id;
+      writeCard.hidden = true;
       showBrief(data.id, data.brief);
       askQuestions(data.id);
     } catch (error) {

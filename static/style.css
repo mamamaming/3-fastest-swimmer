@@ -138,3 +138,5 @@ input:focus, select:focus { border-color: #39805e; outline: 2px solid #39805e22;
 .target-field { max-width: 360px; margin-top: 4px; }
 .questions-card { margin-top: 18px; }
 .questions-card .field { font-weight: 500; line-height: 1.45; }
+.write-actions { display: flex; flex: 0 0 auto; gap: 8px; }
+a.primary-button { text-decoration: none; }

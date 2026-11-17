@@ -1,6 +1,8 @@
 """Flask routes only. Logic lives in the modules below. Owner: Ming."""
 
+import io
 import json
+import re
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, send_file
@@ -11,10 +13,12 @@ from knowledge import (
     INDEX_LOCK, document_records, embed_texts, extract_document, load_index,
     retrieve_context, save_index, search_sections, split_document,
 )
+from checker import check_brief
+from export import fill_docx
 from ollama_client import OllamaError, run_chat_with_tools
 from writer import (
     EVENT_TYPES, BriefError, apply_answers, brief_warnings, build_brief, club_facts,
-    department_options, find_gaps, load_brief, proposer_options, save_brief,
+    department_options, find_gaps, load_brief, proposer_options, save_brief, write_all_sections,
 )
 
 app = Flask(__name__)
@@ -99,6 +103,36 @@ def brief_answers(brief_id):
     except OSError as error:
         return jsonify(error=f"Could not save the answers: {error}"), 500
     return jsonify(id=brief_id, brief=brief)
+
+
+@app.post("/api/briefs/<brief_id>/write")
+def write_brief(brief_id):
+    """C3: the model writes the 7 sections, then the checker lists what to double-check."""
+    try:
+        brief = write_all_sections(load_brief(brief_id))
+        save_brief(brief, brief_id)
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+    except OllamaError as error:
+        return jsonify(error=f"The local model is not available: {error}"), 503
+    except OSError as error:
+        return jsonify(error=f"Could not save the proposal text: {error}"), 500
+    return jsonify(id=brief_id, brief=brief, warnings=check_brief(brief))
+
+
+@app.get("/api/briefs/<brief_id>/docx")
+def download_docx(brief_id):
+    """C3: the finished proposal as a Word file."""
+    try:
+        brief = load_brief(brief_id)
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+    content = fill_docx(brief, club_facts())
+    name = re.sub(r"[^A-Za-z0-9]+", "_", brief.get("event_name", "")).strip("_") or "proposal"
+    return send_file(
+        io.BytesIO(content), as_attachment=True, download_name=f"{name}_Proposal.docx",
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
 
 
 @app.get("/api/documents")
