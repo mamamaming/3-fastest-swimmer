@@ -1,0 +1,12 @@
+TASK: Before the proposal is written, find important facts that are missing from the event brief.
+
+The proposal has these AI-written sections: Introduction (the problem the event solves and what participants gain), Objectives, Benefits for the school, Activity KPIs, Desired Characteristics, Schedule (preparation steps before the event, the event day, follow-up) and Facilities Needed (equipment and materials).
+
+List up to {count} questions to ask the person who filled in the form. Ask only about facts that:
+- the sections above really need, and
+- are not already in the brief, and
+- only the organiser can know (for example: why students need this event, how participants register, whether there is a break or food, what equipment the room already has, how satisfaction is measured).
+
+Do not ask about the budget, prices, the event name, date, time, location, number of participants, attendance target, proposer or department; these are handled elsewhere. Do not ask for anything you could write yourself from the brief. Write each question in one short, plain sentence. If nothing important is missing, return an empty list.
+
+OUTPUT: {"questions": [{"question": "the question", "needed_for": "which section"}]}

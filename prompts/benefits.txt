@@ -1,0 +1,5 @@
+SECTION: 6. Benefits for Chulalongkorn School of Integrated Innovation
+
+Write 4 to 6 benefits for the school (not only for participants). Each benefit is one sentence and must end with the code of at least one SCHOOL KPI it supports, in brackets, for example "(KPI3)". Use only KPI codes listed under SCHOOL KPIS, and only where the link is honest.
+
+OUTPUT: {"items": ["benefit sentence (KPI code)", "..."]}

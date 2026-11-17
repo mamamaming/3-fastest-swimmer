@@ -16,7 +16,7 @@ SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md"}
 OLLAMA_CHAT_URL = "http://localhost:11434/api/chat"
 OLLAMA_EMBED_URL = "http://localhost:11434/api/embed"
 OLLAMA_WEB_SEARCH_URL = "https://ollama.com/api/web_search"
-MODEL = "qwen3:1.7b"  # Yuay picks the proposal model in B2; change it here.
+MODEL = "gemma3:4b"  # B2 (17 Nov): best of gemma3:4b, qwen3:4b, llama3.2:3b on an 8 GB M2.
 EMBED_MODEL = "nomic-embed-text"
 OLLAMA_CHAT_TIMEOUT = 600
 
@@ -27,3 +27,6 @@ MAX_WEB_SEARCH_CALLS = 5
 
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 DATA_FOLDER.mkdir(parents=True, exist_ok=True)
+
+# CSII asks for a round requested total: line items stay exact, the total is rounded up to this step.
+BUDGET_TOTAL_ROUND_UP_TO = 100

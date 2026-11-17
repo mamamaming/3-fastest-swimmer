@@ -30,6 +30,18 @@ button:disabled { cursor: wait; opacity: .6; }
 .file-picker { display: flex; flex: 1; min-width: 0; align-items: center; gap: 13px; }
 .file-picker label { flex: 0 0 auto; color: #48524b; font-size: 13px; }
 .file-picker input { min-width: 0; color: #6b756e; font-size: 12px; }
+.search-section { padding: 23px 0 20px; border-top: 1px solid #edf0ed; }
+.search-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 14px; }
+.search-form label { display: grid; gap: 5px; color: #48524b; font-size: 12px; }
+.search-form .search-query { flex: 1; min-width: 180px; }
+.search-form select, .search-form input { min-height: 36px; padding: 0 10px; border: 1px solid #cfd8d1; border-radius: 7px; background: #fff; color: #343b36; font-size: 13px; }
+.search-results { display: grid; gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.search-card { padding: 13px 15px; border: 1px solid #e9ede9; border-radius: 9px; }
+.search-card-top { display: flex; justify-content: space-between; gap: 12px; color: #2d342f; font-size: 13px; }
+.search-score { flex: 0 0 auto; padding: 2px 8px; border-radius: 10px; background: #edf5ef; color: #2f7451; font-size: 11px; font-weight: 600; }
+.search-meta { margin: 5px 0 8px; color: #879088; font-size: 11px; }
+.search-text { margin: 0; color: #434b45; font-size: 12px; line-height: 1.55; }
+.file-picker select { min-height: 34px; padding: 0 10px; border: 1px solid #cfd8d1; border-radius: 7px; background: #fff; color: #343b36; font: inherit; font-size: 13px; cursor: pointer; }
 .primary-button { display: inline-flex; min-height: 39px; align-items: center; justify-content: center; gap: 8px; padding: 0 17px; border: 1px solid #367b56; border-radius: 8px; background: #39805e; color: #fff; font-size: 13px; font-weight: 600; transition: background .18s, border-color .18s; }
 .primary-button:hover:not(:disabled) { border-color: #2c6d49; background: #2f7451; }
 .helper-text { margin: 10px 0 0; color: #89928c; font-size: 11px; }
@@ -89,3 +101,42 @@ textarea::placeholder { color: #9ba39d; }
   .file-picker input { width: 100%; }
   .chat-card { height: calc(100vh - 255px); min-height: 330px; padding: 0 14px; }
 }
+
+/* Proposal form page (new.html). Owner: Yuay. */
+input[type="text"], input[type="number"], input[type="date"], input[type="time"], select { width: 100%; min-height: 37px; padding: 7px 10px; border: 1px solid #dfe5df; border-radius: 8px; background: #fff; color: #343b36; font: inherit; font-size: 13px; }
+input:focus, select:focus { border-color: #39805e; outline: 2px solid #39805e22; }
+.form-card { padding: 6px 27px 22px; }
+.form-section { padding: 20px 0; border-bottom: 1px solid #edf0ed; }
+.form-section h2 { margin: 0 0 12px; color: #2d342f; font-size: 15px; font-weight: 650; }
+.optional { color: #8a938c; font-size: 12px; font-weight: 400; }
+.hint { margin: 0 0 10px; color: #818b84; font-size: 12px; }
+.field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 5px; color: #48524b; font-size: 12px; font-weight: 550; }
+.field.wide { grid-column: 1 / -1; }
+.rows { display: grid; gap: 8px; margin-bottom: 10px; }
+.row { display: flex; align-items: flex-end; gap: 8px; }
+.row .grow { flex: 1; min-width: 0; }
+.row .small { flex: 0 0 110px; }
+.remove-button { flex: 0 0 37px; height: 37px; border: 1px solid #f0d9dc; border-radius: 8px; background: #fff4f4; color: #b64b59; font-size: 16px; }
+.add-row { margin-bottom: 8px; }
+.checkbox { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #48524b; font-size: 13px; }
+.form-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-top: 18px; }
+.form-status { color: #2e8055; font-size: 13px; }
+.form-status p { margin: 0; }
+.form-status ul { margin: 6px 0 0; padding-left: 18px; }
+.form-status.error { color: #b54755; }
+.result-card { margin-top: 18px; padding: 20px 27px; }
+.result-card h2 { margin: 0 0 6px; font-size: 15px; }
+.result-card pre { overflow-x: auto; margin: 0; padding: 14px; border-radius: 8px; background: #f3f5f3; font-size: 12px; }
+@media (max-width: 560px) {
+  .row { flex-wrap: wrap; }
+  .row .grow { flex-basis: 100%; }
+  .row .small { flex: 1; }
+  .form-card { padding: 6px 16px 18px; }
+}
+.form-status.warning { color: #a0640f; }
+.target-field { max-width: 360px; margin-top: 4px; }
+.questions-card { margin-top: 18px; }
+.questions-card .field { font-weight: 500; line-height: 1.45; }
+.write-actions { display: flex; flex: 0 0 auto; gap: 8px; }
+a.primary-button { text-decoration: none; }

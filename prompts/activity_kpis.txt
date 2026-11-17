@@ -1,0 +1,8 @@
+SECTION: 7. Activity Key Performance Index (Activity KPIs)
+
+Write 2 to 3 KPIs. Each one must be measurable with a number, for example attendance or a satisfaction rating.
+- For attendance, use the attendance_target from the brief. If it is null, write "Workshop attendance of at least [TO CONFIRM: minimum attendance]" (use the right word for the event type).
+- A satisfaction KPI uses a rating out of 5, for example "Participant satisfaction rate of at least 4 out of 5".
+- Do not use any other number that is not in the brief.
+
+OUTPUT: {"items": ["KPI", "..."]}

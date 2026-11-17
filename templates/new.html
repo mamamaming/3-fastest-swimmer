@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New proposal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="page-shell">
+    <div class="page-heading">
+      <p class="eyebrow">PROPOSAL WRITER</p>
+      <h1>New proposal</h1>
+      <p class="page-subtitle">Fill in the facts about the event. The AI writes the proposal sections from these, so only enter what is true.</p>
+      <nav class="page-nav" aria-label="Main navigation">
+        <a href="/">Chat</a>
+        <a href="/documents">Document collection</a>
+        <a class="active" href="/new" aria-current="page">New proposal</a>
+      </nav>
+    </div>
+
+    <form id="brief-form" class="content-card form-card" novalidate>
+      <section class="form-section" aria-labelledby="event-heading">
+        <h2 id="event-heading">1. Event</h2>
+        <div class="field-grid">
+          <label class="field wide">Event name
+            <input name="event_name" type="text" placeholder="BizComp Inclusive Workshop 2" required>
+          </label>
+          <label class="field">Event type
+            <select name="event_type" required>
+              <option value="" selected disabled>Choose a type</option>
+              {% for type in event_types %}<option value="{{ type }}">{{ type }}</option>{% endfor %}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="when-heading">
+        <h2 id="when-heading">2. Date, time and place</h2>
+        <div class="field-grid">
+          <label class="field">Date <input name="date" type="date" required></label>
+          <label class="field">End date <span class="optional">(only if more than one day)</span>
+            <input name="end_date" type="date">
+          </label>
+          <label class="field">Start time <input name="start_time" type="time" required></label>
+          <label class="field">End time <input name="end_time" type="time" required></label>
+          <label class="field wide">Location
+            <input name="location" type="text" placeholder="Room 301, Chamchuri 10" required>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="people-heading">
+        <h2 id="people-heading">3. Participants</h2>
+        <p class="hint">One row per group, for example BAScii students 25, members 25, mentor 1.</p>
+        <div id="participant-rows" class="rows"></div>
+        <button type="button" class="secondary-button add-row" data-add="participant">+ Add group</button>
+        <p class="hint" id="participant-total">Total: 0 people</p>
+        <label class="field target-field">Minimum attendance target <span class="optional">(optional, used for the Activity KPIs)</span>
+          <input name="attendance_target" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 25">
+        </label>
+      </section>
+
+      <section class="form-section" aria-labelledby="activities-heading">
+        <h2 id="activities-heading">4. What happens at the event</h2>
+        <p class="hint">3 to 5 short points. The AI builds the Introduction, Objectives and Schedule from these.</p>
+        <div id="activity-rows" class="rows"></div>
+        <button type="button" class="secondary-button add-row" data-add="activity">+ Add point</button>
+      </section>
+
+      <section class="form-section" aria-labelledby="speakers-heading">
+        <h2 id="speakers-heading">5. Speakers <span class="optional">(optional)</span></h2>
+        <div id="speaker-rows" class="rows"></div>
+        <button type="button" class="secondary-button add-row" data-add="speaker">+ Add speaker</button>
+      </section>
+
+      <section class="form-section" aria-labelledby="budget-heading">
+        <h2 id="budget-heading">6. Budget</h2>
+        <label class="checkbox"><input id="no-budget" name="no_budget" type="checkbox"> No budget for this event</label>
+        <div id="budget-block">
+          <div id="budget-rows" class="rows"></div>
+          <button type="button" class="secondary-button add-row" data-add="budget">+ Add item</button>
+          <p class="hint" id="budget-total">Total: 0 baht</p>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="proposer-heading">
+        <h2 id="proposer-heading">7. Proposer and department</h2>
+        <div class="field-grid">
+        <label class="field">Proposed by
+          {% if proposers %}
+          <select name="proposer" required>
+            <option value="" selected disabled>Choose an officer</option>
+            {% for person in proposers %}<option value="{{ person.name }}">{{ person.name }}{% if person.role %} ({{ person.role }}){% endif %}</option>{% endfor %}
+          </select>
+          {% else %}
+          <input name="proposer" type="text" placeholder="Full name" required>
+          {% endif %}
+        </label>
+        <label class="field">Department in charge <span class="optional">(not needed for long projects)</span>
+          {% if departments %}
+          <select name="department">
+            <option value="" selected>Choose a department</option>
+            {% for role in departments %}<option value="{{ role }}">{{ role }}</option>{% endfor %}
+          </select>
+          {% else %}
+          <input name="department" type="text" placeholder="e.g. Capacity Builder">
+          {% endif %}
+        </label>
+        </div>
+      </section>
+
+      <div class="form-footer">
+        <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+        <button id="submit-button" class="primary-button" type="submit">Save event brief</button>
+      </div>
+    </form>
+
+    <form id="questions-form" class="content-card form-card questions-card" hidden novalidate aria-labelledby="questions-heading">
+      <section class="form-section">
+        <h2 id="questions-heading">A few questions before writing</h2>
+        <p class="hint" id="questions-hint">Answer what you know. Anything left empty is marked [TO CONFIRM] in the proposal for someone to fill in.</p>
+        <div id="question-list" class="rows"></div>
+      </section>
+      <div class="form-footer">
+        <div id="questions-status" class="form-status" role="status" aria-live="polite"></div>
+        <button id="answers-button" class="primary-button" type="submit">Save answers</button>
+      </div>
+    </form>
+
+    <section id="write-card" class="content-card form-card questions-card" hidden aria-labelledby="write-heading">
+      <section class="form-section">
+        <h2 id="write-heading">Write the proposal</h2>
+        <p class="hint">The local model writes the 7 sections, then the app checks them. This takes 5 to 10 minutes on an 8 GB laptop; keep this page open.</p>
+      </section>
+      <div class="form-footer">
+        <div id="write-status" class="form-status" role="status" aria-live="polite"></div>
+        <div class="write-actions">
+          <button id="write-button" class="primary-button" type="button">Write proposal</button>
+          <a id="download-link" class="primary-button" hidden>Download .docx</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="result" class="content-card result-card" hidden aria-labelledby="result-heading">
+      <h2 id="result-heading">Event brief saved</h2>
+      <p class="hint" id="result-id"></p>
+      <pre id="result-json"></pre>
+    </section>
+  </main>
+
+  <template id="participant-template">
+    <div class="row">
+      <label class="field grow">Group <input data-key="group" type="text" placeholder="BAScii students"></label>
+      <label class="field small">People <input data-key="count" type="number" min="1" step="1" inputmode="numeric"></label>
+      <button type="button" class="remove-button" aria-label="Remove group">×</button>
+    </div>
+  </template>
+  <template id="activity-template">
+    <div class="row">
+      <label class="field grow"><span class="visually-hidden">Point</span><input data-key="text" type="text" placeholder="Mini case challenge in small teams"></label>
+      <button type="button" class="remove-button" aria-label="Remove point">×</button>
+    </div>
+  </template>
+  <template id="speaker-template">
+    <div class="row">
+      <label class="field grow"><span class="visually-hidden">Speaker</span><input data-key="text" type="text" placeholder="1 mentor (BAScii alumnus)"></label>
+      <button type="button" class="remove-button" aria-label="Remove speaker">×</button>
+    </div>
+  </template>
+  <template id="budget-template">
+    <div class="row">
+      <label class="field grow">Item <input data-key="item" type="text" placeholder="Pens (pack)"></label>
+      <label class="field small">Qty <input data-key="qty" type="number" min="0" step="any" inputmode="decimal"></label>
+      <label class="field small">Unit price (฿) <input data-key="unit_price" type="number" min="0" step="any" inputmode="decimal"></label>
+      <button type="button" class="remove-button" aria-label="Remove item">×</button>
+    </div>
+  </template>
+
+  <script src="{{ url_for('static', filename='new.js') }}"></script>
+</body>
+</html>

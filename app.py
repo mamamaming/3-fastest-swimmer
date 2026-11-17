@@ -1,6 +1,8 @@
 """Flask routes only. Logic lives in the modules below. Owner: Ming."""
 
+import io
 import json
+import re
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, send_file
@@ -9,9 +11,15 @@ from werkzeug.utils import secure_filename
 from config import EMBED_MODEL, MAX_FILE_SIZE, SUPPORTED_EXTENSIONS, UPLOAD_FOLDER
 from knowledge import (
     INDEX_LOCK, document_records, embed_texts, extract_document, load_index,
-    retrieve_context, save_index, split_text,
+    retrieve_context, save_index, search_sections, split_document,
 )
+from checker import check_brief
+from export import fill_docx
 from ollama_client import OllamaError, run_chat_with_tools
+from writer import (
+    EVENT_TYPES, BriefError, apply_answers, brief_warnings, build_brief, club_facts,
+    department_options, find_gaps, load_brief, proposer_options, save_brief, write_all_sections,
+)
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_FILE_SIZE + 1024 * 1024
@@ -53,6 +61,80 @@ def documents_page():
     return render_template("documents.html")
 
 
+@app.get("/new")
+def new_proposal_page():
+    facts = club_facts()
+    return render_template(
+        "new.html", event_types=EVENT_TYPES,
+        proposers=proposer_options(facts), departments=department_options(facts),
+    )
+
+
+@app.post("/api/briefs")
+def create_brief():
+    try:
+        brief = build_brief(request.get_json(silent=True))
+        brief_id = save_brief(brief)
+    except BriefError as error:
+        return jsonify(error="Please fix the form.", problems=error.problems), 400
+    except OSError as error:
+        return jsonify(error=f"Could not save the event brief: {error}"), 500
+    return jsonify(id=brief_id, brief=brief, warnings=brief_warnings(brief, club_facts())), 201
+
+
+@app.post("/api/briefs/<brief_id>/questions")
+def brief_questions(brief_id):
+    try:
+        return jsonify(questions=find_gaps(load_brief(brief_id)))
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+
+
+@app.post("/api/briefs/<brief_id>/answers")
+def brief_answers(brief_id):
+    payload = request.get_json(silent=True) or {}
+    try:
+        brief = apply_answers(load_brief(brief_id), payload.get("questions"), payload.get("answers"))
+        save_brief(brief, brief_id)
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+    except BriefError as error:
+        return jsonify(error="Please fix the answers.", problems=error.problems), 400
+    except OSError as error:
+        return jsonify(error=f"Could not save the answers: {error}"), 500
+    return jsonify(id=brief_id, brief=brief)
+
+
+@app.post("/api/briefs/<brief_id>/write")
+def write_brief(brief_id):
+    """C3: the model writes the 7 sections, then the checker lists what to double-check."""
+    try:
+        brief = write_all_sections(load_brief(brief_id))
+        save_brief(brief, brief_id)
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+    except OllamaError as error:
+        return jsonify(error=f"The local model is not available: {error}"), 503
+    except OSError as error:
+        return jsonify(error=f"Could not save the proposal text: {error}"), 500
+    return jsonify(id=brief_id, brief=brief, warnings=check_brief(brief))
+
+
+@app.get("/api/briefs/<brief_id>/docx")
+def download_docx(brief_id):
+    """C3: the finished proposal as a Word file."""
+    try:
+        brief = load_brief(brief_id)
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+    content = fill_docx(brief, club_facts())
+    name = re.sub(r"[^A-Za-z0-9]+", "_", brief.get("event_name", "")).strip("_") or "proposal"
+    return send_file(
+        io.BytesIO(content), as_attachment=True, download_name=f"{name}_Proposal.docx",
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+
 @app.get("/api/documents")
 def list_documents():
     try:
@@ -79,7 +161,7 @@ def upload_document():
 
     try:
         pages = extract_document(safe_name, content)
-        indexed_chunks = [chunk for page_number, text in pages for chunk in split_text(text, page_number)]
+        indexed_chunks = split_document(pages, request.form.get("event_type", "other"))
         vectors = embed_texts([chunk["text"] for chunk in indexed_chunks])
     except OllamaError as error:
         return jsonify(error=f"Could not index this document: {error}. Start Ollama and pull {EMBED_MODEL}."), 502
@@ -96,13 +178,7 @@ def upload_document():
             number += 1
 
         stored_chunks = [
-            {
-                "source": candidate,
-                "chunk": chunk_number,
-                "page": chunk["page"],
-                "text": chunk["text"],
-                "embedding": vector,
-            }
+            {"source": candidate, "chunk": chunk_number, **chunk, "embedding": vector}
             for chunk_number, (chunk, vector) in enumerate(zip(indexed_chunks, vectors), start=1)
         ]
         destination = UPLOAD_FOLDER / candidate
@@ -166,6 +242,27 @@ def serve_document(filename):
     )
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+@app.get("/api/search")
+def search():
+    """Test route for search_sections. Example:
+    /api/search?section=Introduction&event_type=open%20workshop&q=case%20competition&skip=inclusive-workshop-2
+    """
+    section = request.args.get("section", "").strip()
+    if not section:
+        return jsonify(error="Add ?section=, e.g. section=Introduction."), 400
+    skip = [name for value in request.args.getlist("skip") for name in value.split(",")]
+    try:
+        results = search_sections(
+            section, request.args.get("event_type", ""), request.args.get("q", ""),
+            k=request.args.get("k", 3, type=int), skip=skip,
+        )
+    except OllamaError as error:
+        return jsonify(error=f"{error}. Start Ollama and pull {EMBED_MODEL}."), 502
+    except (OSError, json.JSONDecodeError, ValueError) as error:
+        return jsonify(error=f"Could not search the local document index: {error}"), 500
+    return jsonify(results=results)
 
 
 @app.errorhandler(413)
