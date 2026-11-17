@@ -13,8 +13,8 @@ from knowledge import (
 )
 from ollama_client import OllamaError, run_chat_with_tools
 from writer import (
-    EVENT_TYPES, BriefError, brief_warnings, build_brief, club_facts, department_options,
-    proposer_options, save_brief,
+    EVENT_TYPES, BriefError, apply_answers, brief_warnings, build_brief, club_facts,
+    department_options, find_gaps, load_brief, proposer_options, save_brief,
 )
 
 app = Flask(__name__)
@@ -76,6 +76,29 @@ def create_brief():
     except OSError as error:
         return jsonify(error=f"Could not save the event brief: {error}"), 500
     return jsonify(id=brief_id, brief=brief, warnings=brief_warnings(brief, club_facts())), 201
+
+
+@app.post("/api/briefs/<brief_id>/questions")
+def brief_questions(brief_id):
+    try:
+        return jsonify(questions=find_gaps(load_brief(brief_id)))
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+
+
+@app.post("/api/briefs/<brief_id>/answers")
+def brief_answers(brief_id):
+    payload = request.get_json(silent=True) or {}
+    try:
+        brief = apply_answers(load_brief(brief_id), payload.get("questions"), payload.get("answers"))
+        save_brief(brief, brief_id)
+    except FileNotFoundError:
+        return jsonify(error="Event brief not found."), 404
+    except BriefError as error:
+        return jsonify(error="Please fix the answers.", problems=error.problems), 400
+    except OSError as error:
+        return jsonify(error=f"Could not save the answers: {error}"), 500
+    return jsonify(id=brief_id, brief=brief)
 
 
 @app.get("/api/documents")

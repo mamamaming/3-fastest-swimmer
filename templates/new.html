@@ -116,6 +116,18 @@
       </div>
     </form>
 
+    <form id="questions-form" class="content-card form-card questions-card" hidden novalidate aria-labelledby="questions-heading">
+      <section class="form-section">
+        <h2 id="questions-heading">A few questions before writing</h2>
+        <p class="hint" id="questions-hint">Answer what you know. Anything left empty is marked [TO CONFIRM] in the proposal for someone to fill in.</p>
+        <div id="question-list" class="rows"></div>
+      </section>
+      <div class="form-footer">
+        <div id="questions-status" class="form-status" role="status" aria-live="polite"></div>
+        <button id="answers-button" class="primary-button" type="submit">Save answers</button>
+      </div>
+    </form>
+
     <section id="result" class="content-card result-card" hidden aria-labelledby="result-heading">
       <h2 id="result-heading">Event brief saved</h2>
       <p class="hint" id="result-id"></p>

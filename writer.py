@@ -281,9 +281,124 @@ def load_brief(brief_id):
     return json.loads((BRIEFS_FOLDER / f"{brief_id}.json").read_text(encoding="utf-8"))
 
 
+# ---------------------------------------------------------------------------------------------
+# B5: follow-up questions before writing
+# ---------------------------------------------------------------------------------------------
+
+MAX_QUESTIONS = 3
+SPEAKER_WORDS = re.compile(r"\b(speaker|mentor|guest|alumn\w*|trainer|panel\w*|judge\w*)\b", re.IGNORECASE)
+# The model must not ask about things the form already collects or that code handles.
+ALREADY_KNOWN = re.compile(
+    r"\b(budget|cost|price|baht|fund|event name|title|date|location|venue|room|proposer|department)\b",
+    re.IGNORECASE,
+)
+ATTENDANCE_WORDS = re.compile(r"\b(attend\w*|turnout|how many (people|participants))\b", re.IGNORECASE)
+GAPS_SCHEMA = {
+    "type": "object",
+    "properties": {"questions": {"type": "array", "items": {
+        "type": "object",
+        "properties": {"question": {"type": "string"}, "needed_for": {"type": "string"}},
+        "required": ["question", "needed_for"],
+    }}},
+    "required": ["questions"],
+}
+
+
+def _code_gaps(brief):
+    """Gaps code can find for sure, without the model."""
+    questions = []
+    if brief.get("attendance_target") is None:
+        questions.append({
+            "field": "attendance_target",
+            "question": "What is the minimum number of people who must attend for the event to count as a success?",
+            "needed_for": "Activity KPIs",
+        })
+    if not brief.get("speakers") and any(SPEAKER_WORDS.search(item) for item in brief.get("activities", [])):
+        questions.append({
+            "field": "speakers",
+            "question": "The activities mention a speaker or mentor. Who is it (name, or a description such as "
+                        "\"1 BAScii alumnus\")?",
+            "needed_for": "Introduction, Schedule",
+        })
+    return questions
+
+
+def _model_gaps(brief, count):
+    """Ask the model what else the 7 sections need that the brief does not say. [] if it fails."""
+    if count <= 0:
+        return []
+    messages = [
+        {"role": "system", "content": (PROMPTS_FOLDER / "common.txt").read_text(encoding="utf-8")},
+        {"role": "user", "content": (PROMPTS_FOLDER / "gaps.txt").read_text(encoding="utf-8").replace(
+            "{count}", str(count)) + "\n\nEVENT BRIEF:\n" + json.dumps(brief_facts(brief), ensure_ascii=False, indent=2)},
+    ]
+    try:
+        reply = call_model(messages, GAPS_SCHEMA)
+    except (OllamaError, SectionError):
+        return []
+    questions = []
+    for item in reply.get("questions") or [] if isinstance(reply, dict) else []:
+        question = _text(item.get("question")) if isinstance(item, dict) else ""
+        # Attendance is asked by code when it is missing, so the model never needs to ask it.
+        if not question or ALREADY_KNOWN.search(question) or ATTENDANCE_WORDS.search(question):
+            continue
+        questions.append({"field": "", "question": question, "needed_for": _text(item.get("needed_for"))})
+    return questions
+
+
 def find_gaps(brief):
-    """Return up to 3 questions about information the sections need but the brief lacks (B5)."""
-    raise NotImplementedError("find_gaps is task B5 (Yuay). See docs/SPEC.md.")
+    """Return up to 3 questions about information the sections need but the brief lacks (B5).
+
+    Each question is {"id", "field", "question", "needed_for"}. "field" names the brief field an
+    answer fills (attendance_target, speakers), or is "" for answers kept in followup_answers.
+    Works without Ollama: the model's questions are then simply left out.
+    """
+    questions = _code_gaps(brief)
+    asked = {question["question"].lower() for question in questions}
+    for question in _model_gaps(brief, MAX_QUESTIONS - len(questions)):
+        if question["question"].lower() not in asked:
+            asked.add(question["question"].lower())
+            questions.append(question)
+    return [dict(question, id=f"q{number}") for number, question in enumerate(questions[:MAX_QUESTIONS], start=1)]
+
+
+def apply_answers(brief, questions, answers):
+    """Put the user's answers into the brief and return it (B5).
+
+    Answers to field questions fill that field. Other answers go to followup_answers, keyed by the
+    question. Every unanswered question goes to to_confirm, so the writer marks it [TO CONFIRM].
+    Raises BriefError if an attendance answer is not a usable whole number.
+    """
+    answers = answers if isinstance(answers, dict) else {}
+    followup = dict(brief.get("followup_answers") or {})
+    to_confirm = list(brief.get("to_confirm") or [])
+    problems = []
+    for question in questions if isinstance(questions, list) else []:
+        if not isinstance(question, dict) or not _text(question.get("question")):
+            continue
+        text, field = _text(question["question"]), _text(question.get("field"))
+        answer = _text(answers.get(_text(question.get("id"))))
+        if not answer:
+            to_confirm.append(text)
+            continue
+        if field == "attendance_target":
+            number = _number(answer)
+            total = sum(row.get("count", 0) for row in brief.get("participants", []))
+            if not isinstance(number, int) or number < 1:
+                problems.append("The minimum attendance must be a whole number (1 or more).")
+            elif number > total:
+                problems.append(f"The minimum attendance ({number}) is higher than the total participants ({total}).")
+            else:
+                brief["attendance_target"] = number
+        elif field == "speakers":
+            brief["speakers"] = [*brief.get("speakers", []), answer]
+        else:
+            followup[text] = answer
+    if problems:
+        raise BriefError(problems)
+    brief["followup_answers"] = followup
+    brief["to_confirm"] = list(dict.fromkeys(to_confirm))
+    return brief
 
 
 # ---------------------------------------------------------------------------------------------
@@ -374,6 +489,10 @@ def build_messages(brief, section, facts, examples):
         parts.append("SCHOOL KPIS:\n" + json.dumps(school_kpis(facts), ensure_ascii=False, indent=2))
     if section == "characteristics":
         parts.append("DESIRED CHARACTERISTICS:\n" + json.dumps(characteristic_options(facts), ensure_ascii=False, indent=2))
+    unanswered = [item for item in brief.get("to_confirm") or [] if isinstance(item, str)]
+    if unanswered:
+        parts.append("UNANSWERED QUESTIONS (if this section needs one of these, write [TO CONFIRM: ...] "
+                     "instead of guessing):\n- " + "\n- ".join(unanswered))
     if examples:
         parts.append("EXAMPLES:\n" + "\n\n".join(
             f"--- Example {number}: {example.get('event_name') or example.get('source', 'past proposal')} ---\n"

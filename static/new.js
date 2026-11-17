@@ -51,14 +51,14 @@
     document.getElementById('budget-total').textContent = `Total: ${baht.toLocaleString('en-US')} baht`;
   }
 
-  function showStatus(message, problems = [], isError = false) {
-    statusBox.replaceChildren();
-    statusBox.classList.toggle('error', isError);
-    statusBox.classList.remove('warning');
+  function showStatus(message, problems = [], isError = false, box = statusBox) {
+    box.replaceChildren();
+    box.classList.toggle('error', isError);
+    box.classList.remove('warning');
     if (message) {
       const text = document.createElement('p');
       text.textContent = message;
-      statusBox.append(text);
+      box.append(text);
     }
     if (problems.length) {
       const list = document.createElement('ul');
@@ -67,9 +67,95 @@
         item.textContent = problem;
         list.append(item);
       }
-      statusBox.append(list);
+      box.append(list);
     }
   }
+
+  // ---- Follow-up questions (B5) ----
+  const questionsForm = document.getElementById('questions-form');
+  const questionList = document.getElementById('question-list');
+  const questionsStatus = document.getElementById('questions-status');
+  const answersButton = document.getElementById('answers-button');
+  let currentBriefId = null;
+  let currentQuestions = [];
+
+  function showBrief(id, brief) {
+    document.getElementById('result-id').textContent = `Saved as data/briefs/${id}.json`;
+    document.getElementById('result-json').textContent = JSON.stringify(brief, null, 2);
+    result.hidden = false;
+  }
+
+  function renderQuestions(questions) {
+    questionList.replaceChildren();
+    for (const question of questions) {
+      const label = document.createElement('label');
+      label.className = 'field';
+      label.textContent = question.question;
+      if (question.needed_for) {
+        const note = document.createElement('span');
+        note.className = 'optional';
+        note.textContent = ` (for ${question.needed_for})`;
+        label.append(note);
+      }
+      const input = document.createElement('input');
+      input.type = question.field === 'attendance_target' ? 'number' : 'text';
+      if (input.type === 'number') { input.min = '1'; input.step = '1'; }
+      input.dataset.id = question.id;
+      label.append(input);
+      questionList.append(label);
+    }
+  }
+
+  async function askQuestions(id) {
+    questionsForm.hidden = false;
+    questionList.replaceChildren();
+    answersButton.disabled = true;
+    showStatus('Checking what is missing… (the local model can take a minute)', [], false, questionsStatus);
+    questionsForm.scrollIntoView({ behavior: 'smooth' });
+    try {
+      const response = await fetch(`/api/briefs/${id}/questions`, { method: 'POST' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not get the questions.');
+      currentQuestions = data.questions || [];
+      if (!currentQuestions.length) {
+        showStatus('Nothing is missing. The brief is ready for writing.', [], false, questionsStatus);
+        return;
+      }
+      renderQuestions(currentQuestions);
+      showStatus('', [], false, questionsStatus);
+      answersButton.disabled = false;
+      questionList.querySelector('input')?.focus();
+    } catch (error) {
+      showStatus(error.message, [], true, questionsStatus);
+    }
+  }
+
+  questionsForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const answers = {};
+    for (const input of questionList.querySelectorAll('input[data-id]')) answers[input.dataset.id] = input.value.trim();
+    answersButton.disabled = true;
+    showStatus('Saving answers…', [], false, questionsStatus);
+    try {
+      const response = await fetch(`/api/briefs/${currentBriefId}/answers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions: currentQuestions, answers }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        showStatus(data.error || 'Could not save the answers.', data.problems || [], true, questionsStatus);
+        answersButton.disabled = false;
+        return;
+      }
+      const open = data.brief.to_confirm?.length || 0;
+      showStatus(open ? `Answers saved. ${open} item(s) will be marked [TO CONFIRM].` : 'Answers saved.', [], false, questionsStatus);
+      showBrief(data.id, data.brief);
+    } catch (error) {
+      showStatus(`Could not reach the app: ${error.message}`, [], true, questionsStatus);
+      answersButton.disabled = false;
+    }
+  });
 
   function collectForm() {
     const field = (name) => form.elements[name]?.value.trim() ?? '';
@@ -117,10 +203,9 @@
       }
       showStatus(data.warnings?.length ? 'Saved. Please double-check:' : '', data.warnings || []);
       statusBox.classList.toggle('warning', Boolean(data.warnings?.length));
-      document.getElementById('result-id').textContent = `Saved as data/briefs/${data.id}.json`;
-      document.getElementById('result-json').textContent = JSON.stringify(data.brief, null, 2);
-      result.hidden = false;
-      result.scrollIntoView({ behavior: 'smooth' });
+      currentBriefId = data.id;
+      showBrief(data.id, data.brief);
+      askQuestions(data.id);
     } catch (error) {
       showStatus(`Could not reach the app: ${error.message}`, [], true);
     } finally {
