@@ -89,3 +89,36 @@ textarea::placeholder { color: #9ba39d; }
   .file-picker input { width: 100%; }
   .chat-card { height: calc(100vh - 255px); min-height: 330px; padding: 0 14px; }
 }
+
+/* Proposal form page (new.html). Owner: Yuay. */
+input[type="text"], input[type="number"], input[type="date"], input[type="time"], select { width: 100%; min-height: 37px; padding: 7px 10px; border: 1px solid #dfe5df; border-radius: 8px; background: #fff; color: #343b36; font: inherit; font-size: 13px; }
+input:focus, select:focus { border-color: #39805e; outline: 2px solid #39805e22; }
+.form-card { padding: 6px 27px 22px; }
+.form-section { padding: 20px 0; border-bottom: 1px solid #edf0ed; }
+.form-section h2 { margin: 0 0 12px; color: #2d342f; font-size: 15px; font-weight: 650; }
+.optional { color: #8a938c; font-size: 12px; font-weight: 400; }
+.hint { margin: 0 0 10px; color: #818b84; font-size: 12px; }
+.field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 5px; color: #48524b; font-size: 12px; font-weight: 550; }
+.field.wide { grid-column: 1 / -1; }
+.rows { display: grid; gap: 8px; margin-bottom: 10px; }
+.row { display: flex; align-items: flex-end; gap: 8px; }
+.row .grow { flex: 1; min-width: 0; }
+.row .small { flex: 0 0 110px; }
+.remove-button { flex: 0 0 37px; height: 37px; border: 1px solid #f0d9dc; border-radius: 8px; background: #fff4f4; color: #b64b59; font-size: 16px; }
+.add-row { margin-bottom: 8px; }
+.checkbox { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #48524b; font-size: 13px; }
+.form-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-top: 18px; }
+.form-status { color: #2e8055; font-size: 13px; }
+.form-status p { margin: 0; }
+.form-status ul { margin: 6px 0 0; padding-left: 18px; }
+.form-status.error { color: #b54755; }
+.result-card { margin-top: 18px; padding: 20px 27px; }
+.result-card h2 { margin: 0 0 6px; font-size: 15px; }
+.result-card pre { overflow-x: auto; margin: 0; padding: 14px; border-radius: 8px; background: #f3f5f3; font-size: 12px; }
+@media (max-width: 560px) {
+  .row { flex-wrap: wrap; }
+  .row .grow { flex-basis: 100%; }
+  .row .small { flex: 1; }
+  .form-card { padding: 6px 16px 18px; }
+}
