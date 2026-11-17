@@ -71,8 +71,10 @@ SECTION_ALIASES = {
     "facilities": "Facilities",
 }
 # A file that holds other files' text: hiding one of these hides the merged file too.
+# Key = words that must all be in the merged file's name, in any order, so both
+# "workshops-merged" and "19.10.26_ProposalBizcomp_Merged_Workshops_Final.pdf" match.
 MERGED_SOURCES = {
-    "workshops-merged": ("inclusive-workshop-2", "members-only-workshop-1"),
+    ("merged", "workshops"): ("inclusive-workshop-2", "members-only-workshop-1"),
 }
 
 
@@ -320,9 +322,10 @@ def hidden_sources(skip, sources):
     """
     wanted = [_file_key(name) for name in (skip or []) if name and name.strip()]
     hidden = {source for source in sources if any(key in _file_key(source) for key in wanted)}
-    for merged_key, parts in MERGED_SOURCES.items():
+    for merged_words, parts in MERGED_SOURCES.items():
         if any(part in _file_key(source) for source in hidden for part in parts):
-            hidden |= {source for source in sources if merged_key in _file_key(source)}
+            hidden |= {source for source in sources
+                       if all(word in _file_key(source) for word in merged_words)}
     return hidden
 
 
