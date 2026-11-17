@@ -27,3 +27,6 @@ MAX_WEB_SEARCH_CALLS = 5
 
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 DATA_FOLDER.mkdir(parents=True, exist_ok=True)
+
+# CSII asks for a round requested total: line items stay exact, the total is rounded up to this step.
+BUDGET_TOTAL_ROUND_UP_TO = 100
