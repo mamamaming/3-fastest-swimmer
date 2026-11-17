@@ -263,17 +263,24 @@ count; any [TO CONFIRM] left. Check: set 30 pens for 51 people, a warning shows.
 
 ```json
 {
-  "event_name": "", "event_type": "", "date": "", "time": "", "location": "",
+  "event_name": "", "event_type": "", "date": "", "end_date": "", "time": "", "location": "",
   "participants": [{"group": "", "count": 0}],
+  "attendance_target": null,
   "activities": [""], "speakers": [""],
   "budget_items": [{"item": "", "qty": 0, "unit_price": 0}],
-  "proposer": "",
+  "proposer": "", "department": "",
   "followup_answers": {},
   "sections": {"introduction": "", "objectives": [], "benefits": [], "activity_kpis": [],
                "characteristics": {"ticked": [], "explanation": ""}, "schedule": [], "facilities": []},
   "to_confirm": []
 }
 ```
+
+ช่องที่เพิ่มหลังตกลงรูปแบบครั้งแรก (17 พ.ย.):
+
+- `end_date` วันสุดท้ายของงานหลายวัน งานวันเดียวเว้นว่าง
+- `attendance_target` จำนวนคนเข้าขั้นต่ำที่ใช้ใน Activity KPIs ถ้าเว้นว่าง (`null`) แอปจะถามตอนถามกลับ
+- `department` ฝ่ายที่รับผิดชอบงาน ใช้ใส่ข้อ 10.2 คือกรรมการหลัก 4 คนตามด้วยคนในฝ่ายนี้ โปรเจกต์ยาวไม่ต้องกรอก เพราะใช้ทีมโปรเจกต์แทน (ฟอร์มยังไม่มีช่องกรอกทีม ไฟล์จะขึ้น `[TO CONFIRM]`)
 
 กฎของแต่ละหัวข้อที่ AI เขียน:
 
