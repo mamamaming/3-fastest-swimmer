@@ -26,9 +26,19 @@
             <label for="file-input">Choose a file</label>
             <input id="file-input" name="file" type="file" accept=".pdf,.docx,.txt,.md">
           </div>
+          <div class="file-picker">
+            <label for="event-type-input">Event type (old proposals only)</label>
+            <select id="event-type-input" name="event_type">
+              <option value="open workshop">open workshop</option>
+              <option value="members-only workshop">members-only workshop</option>
+              <option value="social event">social event</option>
+              <option value="long project">long project</option>
+              <option value="other" selected>other</option>
+            </select>
+          </div>
           <button id="upload-button" class="primary-button" type="submit">Upload</button>
         </form>
-        <p class="helper-text">Maximum file size: 50 MB.</p>
+        <p class="helper-text">Maximum file size: 50 MB. Old proposals are split by section; other files (club facts, CSII rules) are stored as reference.</p>
         <p id="upload-status" class="upload-status" role="status" aria-live="polite" hidden></p>
       </section>
 
@@ -39,6 +49,39 @@
         </div>
         <p id="empty-state" class="empty-state">No files yet. Upload a document to start your collection.</p>
         <ul id="file-list" class="file-list" aria-label="Uploaded files"></ul>
+      </section>
+
+      <section class="document-section search-section" aria-labelledby="search-title">
+        <h2 id="search-title">Try a search</h2>
+        <p class="helper-text">Finds one section from the most similar past proposals. This is what the writer uses as examples.</p>
+        <form id="search-form" class="search-form">
+          <label>Section
+            <select id="search-section">
+              <option>Introduction</option>
+              <option>Objectives</option>
+              <option>Facilities</option>
+              <option>Benefits</option>
+              <option>Activity KPIs</option>
+              <option>Desired Characteristics</option>
+              <option>Schedule</option>
+            </select>
+          </label>
+          <label>Event type
+            <select id="search-event-type">
+              <option value="open workshop">open workshop</option>
+              <option value="members-only workshop">members-only workshop</option>
+              <option value="social event">social event</option>
+              <option value="long project">long project</option>
+              <option value="other">other</option>
+            </select>
+          </label>
+          <label class="search-query">About
+            <input id="search-query" type="text" placeholder="e.g. case competition workshop">
+          </label>
+          <button id="search-button" class="primary-button" type="submit">Search</button>
+        </form>
+        <p id="search-status" class="upload-status" role="status" aria-live="polite" hidden></p>
+        <ol id="search-results" class="search-results" aria-label="Search results"></ol>
       </section>
     </section>
   </main>

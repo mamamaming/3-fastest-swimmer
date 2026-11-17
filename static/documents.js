@@ -48,6 +48,12 @@ async function loadFiles() {
     const size = document.createElement('span');
     size.className = 'file-size';
     size.textContent = `${formatSize(file.size)} · ${file.chunks ? `Indexed · ${file.chunks} chunks` : 'Not indexed'}`;
+    if (file.event_type) {
+      const type = document.createElement('span');
+      type.className = 'search-score';
+      type.textContent = file.event_type === 'reference' ? 'reference file' : file.event_type;
+      size.append(' · ', type);
+    }
     const removeButton = document.createElement('button');
     removeButton.className = 'delete-button';
     removeButton.type = 'button';
@@ -83,6 +89,7 @@ uploadForm.addEventListener('submit', async (event) => {
 
   const formData = new FormData();
   formData.append('file', fileInput.files[0]);
+  formData.append('event_type', document.querySelector('#event-type-input').value);
   uploadButton.disabled = true;
   showStatus('');
   try {
@@ -100,3 +107,62 @@ uploadForm.addEventListener('submit', async (event) => {
 });
 
 loadFiles().catch((error) => showStatus(error.message, true));
+
+const searchForm = document.querySelector('#search-form');
+const searchButton = document.querySelector('#search-button');
+const searchStatus = document.querySelector('#search-status');
+const searchResults = document.querySelector('#search-results');
+
+function showSearchStatus(message, isError = false) {
+  searchStatus.textContent = message;
+  searchStatus.classList.toggle('error', isError);
+  searchStatus.hidden = !message;
+}
+
+function resultCard(result, rank) {
+  const item = document.createElement('li');
+  item.className = 'search-card';
+  const top = document.createElement('div');
+  top.className = 'search-card-top';
+  const title = document.createElement('strong');
+  title.textContent = `${rank}. ${result.event_name || result.source}`;
+  const score = document.createElement('span');
+  score.className = 'search-score';
+  score.textContent = `match ${Math.min(100, Math.round(result.score * 100))}%`;
+  top.append(title, score);
+  const meta = document.createElement('p');
+  meta.className = 'search-meta';
+  meta.textContent = `${result.section} · ${result.event_type} · ${result.source}${result.page ? ` · page ${result.page}` : ''}`;
+  const text = document.createElement('p');
+  text.className = 'search-text';
+  text.textContent = result.text.length > 420 ? `${result.text.slice(0, 420)}…` : result.text;
+  item.append(top, meta, text);
+  return item;
+}
+
+searchForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const params = new URLSearchParams({
+    section: document.querySelector('#search-section').value,
+    event_type: document.querySelector('#search-event-type').value,
+    q: document.querySelector('#search-query').value,
+  });
+  searchButton.disabled = true;
+  searchResults.replaceChildren();
+  showSearchStatus('Searching…');
+  try {
+    const response = await fetch(`/api/search?${params}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Search failed.');
+    if (!data.results.length) {
+      showSearchStatus('No matching sections. Upload old proposals first.', true);
+      return;
+    }
+    showSearchStatus('');
+    data.results.forEach((result, index) => searchResults.append(resultCard(result, index + 1)));
+  } catch (error) {
+    showSearchStatus(error.message, true);
+  } finally {
+    searchButton.disabled = false;
+  }
+});
