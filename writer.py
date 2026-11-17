@@ -432,6 +432,9 @@ TO_CONFIRM_PATTERN = re.compile(r"\[TO CONFIRM:\s*([^\]]+)\]")
 MONEY_PATTERN = re.compile(r"(฿|\bTHB\b|\bbaht\b|บาท)", re.IGNORECASE)
 NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)*")
 KPI_CODE_PATTERN = re.compile(r"\(([^()]*\bKPI\s*\d+[^()]*)\)")
+# Two or more capitalised words in a row, e.g. "Design Thinking", "Shark Tank Workshop".
+NAME_PATTERN = re.compile(r"\b[A-Z][a-z]+(?:[ -][A-Z][a-z]+)+\b")
+SENTENCE_STARTERS = {"The", "This", "These", "That", "A", "An", "In", "At", "On", "Our", "Each", "Every", "By", "Through"}
 
 
 class SectionError(Exception):
@@ -587,8 +590,10 @@ def _number_variants(value):
 
 def allowed_numbers(brief, facts):
     """Every number the model may write: from the brief, follow-up answers and club facts."""
-    model_facts = {"kpis": school_kpis(facts), "characteristics": characteristic_options(facts)}
-    sources = json.dumps(brief_facts(brief), ensure_ascii=False) + json.dumps(model_facts, ensure_ascii=False)
+    # From club facts only the KPI codes (KPI3): numbers inside the KPI text ("above 80%") are the
+    # school's targets, not facts about this event.
+    codes = [row["code"] for row in school_kpis(facts)]
+    sources = json.dumps(brief_facts(brief), ensure_ascii=False) + json.dumps(codes)
     allowed = set()
     for match in NUMBER_PATTERN.findall(sources):
         allowed |= _number_variants(match)
@@ -601,7 +606,30 @@ def allowed_numbers(brief, facts):
     return allowed
 
 
-def check_section(section, value, brief, facts):
+def borrowed_names(text, brief, facts, examples):
+    """Names that appear in a past proposal (an example) but not in this event's brief or club facts.
+
+    Catches the model copying a topic or method from an example, e.g. "Design Thinking" from
+    another workshop. Only names found in the examples are checked, so ordinary capitalised
+    words are not flagged.
+    """
+    def names(source):
+        found = set()
+        for match in NAME_PATTERN.findall(source):
+            words = match.split()
+            while words and words[0] in SENTENCE_STARTERS:
+                words = words[1:]
+            if len(words) >= 2:
+                found.add(" ".join(words))
+        return found
+
+    from_examples = {name.lower() for example in examples or [] for name in names(example.get("text", ""))}
+    allowed = (json.dumps(brief_facts(brief), ensure_ascii=False) + json.dumps(facts, ensure_ascii=False)
+               + (PROMPTS_FOLDER / "common.txt").read_text(encoding="utf-8")).lower()
+    return sorted({name for name in names(text) if name.lower() in from_examples and name.lower() not in allowed})
+
+
+def check_section(section, value, brief, facts, examples=None):
     """Return a list of rule problems in the section (empty list = OK). Rules from SPEC.md."""
     problems = []
     text = _section_text(value)
@@ -616,6 +644,11 @@ def check_section(section, value, brief, facts):
     if invented:
         problems.append(f"These numbers are not in the brief or club facts: {', '.join(invented)}. "
                         "Remove them or write [TO CONFIRM: ...].")
+
+    borrowed = borrowed_names(TO_CONFIRM_PATTERN.sub("", text), brief, facts, examples)
+    if borrowed:
+        problems.append(f"These come from a past proposal, not from this event: {', '.join(borrowed)}. "
+                        "Remove them or use only what the brief says happens at this event.")
 
     if section in ITEM_LIMITS:
         low, high = ITEM_LIMITS[section]
@@ -684,7 +717,8 @@ def write_section(brief, section, facts=None, skip=None):
     if section not in SECTIONS:
         raise ValueError(f"Unknown section: {section}")
     facts = club_facts() if facts is None else facts
-    messages = build_messages(brief, section, facts, find_examples(brief, section, skip))
+    examples = find_examples(brief, section, skip)
+    messages = build_messages(brief, section, facts, examples)
     schema = output_schema(section, facts)
     value, problems = None, []
     for _attempt in range(MAX_ATTEMPTS):
@@ -693,7 +727,7 @@ def write_section(brief, section, facts=None, skip=None):
         except SectionError as error:
             problems = [str(error)]
             continue
-        problems = check_section(section, value, brief, facts)
+        problems = check_section(section, value, brief, facts, examples)
         if not problems:
             break
         messages = [*messages,
