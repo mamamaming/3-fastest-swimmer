@@ -288,8 +288,14 @@ def load_brief(brief_id):
 MAX_QUESTIONS = 3
 SPEAKER_WORDS = re.compile(r"\b(speaker|mentor|guest|alumn\w*|trainer|panel\w*|judge\w*)\b", re.IGNORECASE)
 # The model must not ask about things the form already collects or that code handles.
+# Match whole phrases, not single words like "room" or "date": "What equipment does the room
+# already have?" and "What is the registration deadline date?" are good questions (gaps.txt).
 ALREADY_KNOWN = re.compile(
-    r"\b(budget|cost|price|baht|fund|event name|title|date|location|venue|room|proposer|department)\b",
+    r"\b(budget|cost|price|baht|fund\w*|(name|title) of the (event|workshop|activity)|event (name|title)"
+    r"|(what|which) (date|day|time) (is|will|does) the (event|workshop|activity)"
+    r"|(event|workshop|activity) date|date of the (event|workshop|activity)"
+    r"|when (is|will|does) the (event|workshop|activity)|location|venue|(what|which) room"
+    r"|where (is|will|does) the (event|workshop|activity)|proposer|department)\b",
     re.IGNORECASE,
 )
 ATTENDANCE_WORDS = re.compile(r"\b(attend\w*|turnout|how many (people|participants))\b", re.IGNORECASE)
