@@ -179,7 +179,7 @@
     downloadLink.hidden = true;
     const started = Date.now();
     const tick = () => showStatus(
-      `Writing… ${Math.round((Date.now() - started) / 1000)} s (usually about 5 minutes)`, [], false, writeStatus,
+      `Writing… ${Math.round((Date.now() - started) / 1000)} s (usually 5 to 10 minutes)`, [], false, writeStatus,
     );
     tick();
     const timer = setInterval(tick, 1000);
