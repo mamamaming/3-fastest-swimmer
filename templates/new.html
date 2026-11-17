@@ -39,6 +39,9 @@
         <h2 id="when-heading">2. Date, time and place</h2>
         <div class="field-grid">
           <label class="field">Date <input name="date" type="date" required></label>
+          <label class="field">End date <span class="optional">(only if more than one day)</span>
+            <input name="end_date" type="date">
+          </label>
           <label class="field">Start time <input name="start_time" type="time" required></label>
           <label class="field">End time <input name="end_time" type="time" required></label>
           <label class="field wide">Location
@@ -53,6 +56,9 @@
         <div id="participant-rows" class="rows"></div>
         <button type="button" class="secondary-button add-row" data-add="participant">+ Add group</button>
         <p class="hint" id="participant-total">Total: 0 people</p>
+        <label class="field target-field">Minimum attendance target <span class="optional">(optional, used for the Activity KPIs)</span>
+          <input name="attendance_target" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 25">
+        </label>
       </section>
 
       <section class="form-section" aria-labelledby="activities-heading">
@@ -79,7 +85,8 @@
       </section>
 
       <section class="form-section" aria-labelledby="proposer-heading">
-        <h2 id="proposer-heading">7. Proposer</h2>
+        <h2 id="proposer-heading">7. Proposer and department</h2>
+        <div class="field-grid">
         <label class="field">Proposed by
           {% if proposers %}
           <select name="proposer" required>
@@ -90,6 +97,17 @@
           <input name="proposer" type="text" placeholder="Full name" required>
           {% endif %}
         </label>
+        <label class="field">Department in charge <span class="optional">(not needed for long projects)</span>
+          {% if departments %}
+          <select name="department">
+            <option value="" selected>Choose a department</option>
+            {% for role in departments %}<option value="{{ role }}">{{ role }}</option>{% endfor %}
+          </select>
+          {% else %}
+          <input name="department" type="text" placeholder="e.g. Capacity Builder">
+          {% endif %}
+        </label>
+        </div>
       </section>
 
       <div class="form-footer">

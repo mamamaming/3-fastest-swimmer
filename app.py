@@ -12,7 +12,10 @@ from knowledge import (
     retrieve_context, save_index, split_text,
 )
 from ollama_client import OllamaError, run_chat_with_tools
-from writer import EVENT_TYPES, BriefError, build_brief, proposer_options, save_brief
+from writer import (
+    EVENT_TYPES, BriefError, brief_warnings, build_brief, club_facts, department_options,
+    proposer_options, save_brief,
+)
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_FILE_SIZE + 1024 * 1024
@@ -56,7 +59,11 @@ def documents_page():
 
 @app.get("/new")
 def new_proposal_page():
-    return render_template("new.html", event_types=EVENT_TYPES, proposers=proposer_options())
+    facts = club_facts()
+    return render_template(
+        "new.html", event_types=EVENT_TYPES,
+        proposers=proposer_options(facts), departments=department_options(facts),
+    )
 
 
 @app.post("/api/briefs")
@@ -68,7 +75,7 @@ def create_brief():
         return jsonify(error="Please fix the form.", problems=error.problems), 400
     except OSError as error:
         return jsonify(error=f"Could not save the event brief: {error}"), 500
-    return jsonify(id=brief_id, brief=brief), 201
+    return jsonify(id=brief_id, brief=brief, warnings=brief_warnings(brief, club_facts())), 201
 
 
 @app.get("/api/documents")

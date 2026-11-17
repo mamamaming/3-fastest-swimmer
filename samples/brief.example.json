@@ -2,6 +2,7 @@
   "event_name": "BizComp Inclusive Workshop 2",
   "event_type": "open workshop",
   "date": "2026-10-12",
+  "end_date": "",
   "time": "16:30-18:30",
   "location": "Room 301, Chaloem Rajakumari 60 (Chamchuri 10) Building",
   "participants": [
@@ -9,6 +10,7 @@
     {"group": "Member students", "count": 25},
     {"group": "Mentor", "count": 1}
   ],
+  "attendance_target": null,
   "activities": [
     "Introduce BizComp and what members can join",
     "Explain business case competition formats",
@@ -24,6 +26,7 @@
     {"item": "BizComp screened mug (speaker gift)", "qty": 1, "unit_price": 500}
   ],
   "proposer": "Sample Proposer",
+  "department": "Capacity Builder",
   "followup_answers": {},
   "sections": {
     "introduction": "",

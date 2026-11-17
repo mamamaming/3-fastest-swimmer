@@ -51,24 +51,76 @@ def _number(value):
     return int(number) if float(number).is_integer() else number
 
 
-def proposer_options():
-    """Officer names for the proposer dropdown, from club facts. Empty list if not available yet."""
+CORE_ROLES = {"President", "Vice President", "Secretary", "Treasurer"}
+MONTHS = {name: number for number, name in enumerate(
+    ["January", "February", "March", "April", "May", "June", "July", "August",
+     "September", "October", "November", "December"], start=1)}
+ACADEMIC_YEAR_PATTERN = re.compile(r"\((\w+)\s+(\d{4})\s*[–-]\s*(\w+)\s+(\d{4})\)")
+
+
+def club_facts():
+    """Club facts as a dict, or {} until load_club_facts (task A4, Boom) is available."""
     try:
         from knowledge import load_club_facts
         facts = load_club_facts()
     except Exception:
-        # load_club_facts is task A4 (Boom). Until it works, the form shows a text box instead.
-        return []
+        return {}
+    return facts if isinstance(facts, dict) else {}
+
+
+def _officers(facts):
+    return [row for row in facts.get("Officers", []) if isinstance(row, dict)]
+
+
+def proposer_options(facts=None):
+    """Officer names for the proposer dropdown. Empty list means the form shows a text box."""
     options = []
-    for row in facts.get("Officers", []) if isinstance(facts, dict) else []:
-        if not isinstance(row, dict):
-            continue
+    for row in _officers(club_facts() if facts is None else facts):
         name = " ".join(
             part for part in (_text(row.get("Title")), _text(row.get("First name")), _text(row.get("Last name"))) if part
         )
         if name:
             options.append({"name": name, "role": _text(row.get("Role"))})
     return options
+
+
+def department_options(facts=None):
+    """Departments that can be in charge of an event: officer roles other than the 4 core roles."""
+    roles = []
+    for row in _officers(club_facts() if facts is None else facts):
+        role = _text(row.get("Role"))
+        if role and role not in CORE_ROLES and role not in roles:
+            roles.append(role)
+    return roles
+
+
+def academic_year(facts=None):
+    """(first day, last day) of the academic year from club facts, e.g. "(August 2026 – May 2027)"."""
+    club = (club_facts() if facts is None else facts).get("Club", {})
+    line = club.get("Academic year", "") if isinstance(club, dict) else ""
+    match = ACADEMIC_YEAR_PATTERN.search(line) if isinstance(line, str) else None
+    if not match or match.group(1) not in MONTHS or match.group(3) not in MONTHS:
+        return None
+    first = date(int(match.group(2)), MONTHS[match.group(1)], 1)
+    end_month, end_year = MONTHS[match.group(3)], int(match.group(4))
+    next_month = date(end_year + end_month // 12, end_month % 12 + 1, 1)
+    return first, date.fromordinal(next_month.toordinal() - 1)
+
+
+def brief_warnings(brief, facts=None, today=None):
+    """Things to double-check that should not block saving (old proposals are re-entered for testing)."""
+    warnings = []
+    today = today or date.today()
+    start = date.fromisoformat(brief["date"])
+    end = date.fromisoformat(brief["end_date"]) if brief.get("end_date") else start
+    if start < today:
+        warnings.append("The event date is in the past. That is fine for testing with an old proposal.")
+    year = academic_year(facts)
+    if year and not (year[0] <= start and end <= year[1]):
+        warnings.append(
+            f"The event is outside the academic year ({year[0]:%d %b %Y} to {year[1]:%d %b %Y}) in club facts."
+        )
+    return warnings
 
 
 def build_brief(form):
@@ -88,11 +140,22 @@ def build_brief(form):
     if event_type not in EVENT_TYPES:
         problems.append("Choose an event type.")
 
-    event_date = _text(form.get("date"))
+    event_date, end_date = _text(form.get("date")), _text(form.get("end_date"))
     try:
-        date.fromisoformat(event_date)
+        first_day = date.fromisoformat(event_date)
     except ValueError:
+        first_day = None
         problems.append("Enter the event date.")
+    if end_date:
+        try:
+            last_day = date.fromisoformat(end_date)
+        except ValueError:
+            problems.append("The end date is not a valid date.")
+        else:
+            if first_day and last_day < first_day:
+                problems.append("The end date must be on or after the start date.")
+            elif first_day and last_day == first_day:
+                end_date = ""  # same day: a one-day event
 
     start, end = _text(form.get("start_time")), _text(form.get("end_time"))
     if not TIME_PATTERN.match(start) or not TIME_PATTERN.match(end):
@@ -118,6 +181,17 @@ def build_brief(form):
     else:
         if not participants:
             problems.append("Add at least one participant group.")
+
+    attendance_target = None
+    raw_target = form.get("attendance_target")
+    target_given = bool(_text(raw_target)) if isinstance(raw_target, str) else raw_target is not None
+    if target_given:
+        attendance_target = _number(raw_target)
+        if not isinstance(attendance_target, int) or attendance_target < 1:
+            problems.append("The minimum attendance target must be a whole number (1 or more).")
+            attendance_target = None
+        elif participants and attendance_target > sum(row["count"] for row in participants):
+            problems.append("The minimum attendance target is higher than the total number of participants.")
 
     activities = [_text(item) for item in form.get("activities") or [] if _text(item)]
     if not MIN_ACTIVITIES <= len(activities) <= MAX_ACTIVITIES:
@@ -146,6 +220,12 @@ def build_brief(form):
     if not proposer:
         problems.append("Choose who is proposing this event.")
 
+    # Department in charge (PIC): lists its members under Responsibilities. Long projects list
+    # their own project team instead, so it is optional for them.
+    department = _text(form.get("department"))
+    if not department and event_type != "long project":
+        problems.append("Choose the department in charge of this event.")
+
     if problems:
         raise BriefError(problems)
 
@@ -153,13 +233,16 @@ def build_brief(form):
         "event_name": event_name,
         "event_type": event_type,
         "date": event_date,
+        "end_date": end_date,
         "time": f"{start}-{end}",
         "location": location,
         "participants": participants,
+        "attendance_target": attendance_target,
         "activities": activities,
         "speakers": speakers,
         "budget_items": budget_items,
         "proposer": proposer,
+        "department": department,
         "followup_answers": {},
         "sections": {
             "introduction": "",

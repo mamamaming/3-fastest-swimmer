@@ -122,3 +122,5 @@ input:focus, select:focus { border-color: #39805e; outline: 2px solid #39805e22;
   .row .small { flex: 1; }
   .form-card { padding: 6px 16px 18px; }
 }
+.form-status.warning { color: #a0640f; }
+.target-field { max-width: 360px; margin-top: 4px; }

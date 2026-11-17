@@ -54,6 +54,7 @@
   function showStatus(message, problems = [], isError = false) {
     statusBox.replaceChildren();
     statusBox.classList.toggle('error', isError);
+    statusBox.classList.remove('warning');
     if (message) {
       const text = document.createElement('p');
       text.textContent = message;
@@ -76,15 +77,18 @@
       event_name: field('event_name'),
       event_type: field('event_type'),
       date: field('date'),
+      end_date: field('end_date'),
       start_time: field('start_time'),
       end_time: field('end_time'),
       location: field('location'),
       participants: readRows('participant'),
+      attendance_target: field('attendance_target'),
       activities: readRows('activity').map((row) => row.text),
       speakers: readRows('speaker').map((row) => row.text),
       no_budget: noBudget.checked,
       budget_items: noBudget.checked ? [] : readRows('budget'),
       proposer: field('proposer'),
+      department: field('department'),
     };
   }
 
@@ -111,7 +115,8 @@
         showStatus(data.error || 'Could not save the event brief.', data.problems || [], true);
         return;
       }
-      showStatus('');
+      showStatus(data.warnings?.length ? 'Saved. Please double-check:' : '', data.warnings || []);
+      statusBox.classList.toggle('warning', Boolean(data.warnings?.length));
       document.getElementById('result-id').textContent = `Saved as data/briefs/${data.id}.json`;
       document.getElementById('result-json').textContent = JSON.stringify(data.brief, null, 2);
       result.hidden = false;
