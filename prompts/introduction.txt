@@ -1,0 +1,9 @@
+SECTION: 1. Introduction
+
+Write one paragraph of 4 to 6 sentences:
+- the problem or need this event addresses for students,
+- what happens at the event (use the activities in the brief),
+- what participants gain.
+Use the exact event name from the brief. Do not number the event ("first", "second") unless the event name does.
+
+OUTPUT: {"text": "the paragraph"}

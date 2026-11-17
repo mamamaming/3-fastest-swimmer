@@ -1,0 +1,5 @@
+SECTION: 8. Desired Characteristics of Chulalongkorn Students
+
+Choose 2 to 4 characteristics from DESIRED CHARACTERISTICS that this event really develops, using the exact names from that list. Then write an explanation of 2 to 4 sentences that names every characteristic you chose, says how the event develops it, and does not mention any characteristic you did not choose.
+
+OUTPUT: {"ticked": ["exact name", "..."], "explanation": "text"}

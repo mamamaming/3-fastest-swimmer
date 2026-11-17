@@ -1,0 +1,9 @@
+SECTION: 9. Schedule
+
+Write the timeline from preparation to follow-up, in order, as 3 to 6 rows:
+- preparation steps before the event, timed relative to the event date (for example "3rd week of November", "2 weeks before the event"),
+- the event day itself, using the exact event date from the brief (and end date if given),
+- a feedback or evaluation step after the event.
+Preparation steps must make sense for this event: for example only "Confirm speaker" if the brief has speakers.
+
+OUTPUT: {"rows": [{"time": "when", "activity": "short name", "description": "one short sentence"}]}

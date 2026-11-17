@@ -1,0 +1,5 @@
+SECTION: 2. Objectives
+
+Write 4 to 6 objectives. Each one is a single sentence that starts with a verb (Teach, Show, Give, Connect, Build, Help...). Each objective must match something that actually happens at the event, according to the activities in the brief.
+
+OUTPUT: {"items": ["objective", "..."]}

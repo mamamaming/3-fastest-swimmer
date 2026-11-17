@@ -1,0 +1,7 @@
+SECTION: 5. Facilities Needed
+
+List the equipment and materials the event needs, one item per line, with a quantity when it is countable, for example "Pen 31" or "Wireless microphone 2".
+- Materials each participant uses (pens, paper, name tags) need a quantity of at least the total number of participants, given in the brief as total_participants.
+- Include only items that the activities, location or speakers really need. If you are unsure whether the room has something (projector, microphone), still list it.
+
+OUTPUT: {"items": ["item and quantity", "..."]}
